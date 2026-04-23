@@ -35,7 +35,7 @@ void startAP() {
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
   WiFi.softAP(currentSSID.c_str(), currentPASS.c_str());
-  WiFi.setTxPower(WIFI_TX_POWER_MAX);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
   apActive = true;
   Serial.println("[AP] Started: " + currentSSID);
 }
@@ -132,7 +132,7 @@ void startEvilTwin(const char* ssid, int channel) {
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAPConfig(IPAddress(172, 217, 28, 254), IPAddress(172, 217, 28, 254), IPAddress(255, 255, 255, 0));
   WiFi.softAP(ssid, "");
-  WiFi.setTxPower(WIFI_TX_POWER_MAX);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
   
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer.start(53, "*", IPAddress(172, 217, 28, 254));
@@ -157,7 +157,7 @@ void startRogueAP(const char* ssid, const char* htmlContent) {
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAPConfig(IPAddress(172, 217, 28, 254), IPAddress(172, 217, 28, 254), IPAddress(255, 255, 255, 0));
   WiFi.softAP(ssid, "");
-  WiFi.setTxPower(WIFI_TX_POWER_MAX);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
   
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer.start(53, "*", IPAddress(172, 217, 28, 254));
